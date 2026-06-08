@@ -1,0 +1,108 @@
+# .github/workflows/ci.yml
+#
+# -> GitHub Actions CI workflow untuk Kriteria 3 (Advance)
+#      -> trigger: push ke main
+#      -> steps:
+#           -> checkout + setup Python 3.12.7
+#           -> install dependencies
+#           -> run mlflow project (training)
+#           -> get latest run_id
+#           -> upload artifacts ke GitHub (commit ke repo)
+#           -> build docker image via mlflow models build-docker
+#           -> push ke Docker Hub
+# -> secrets yang dibutuhkan:
+#      -> DOCKER_HUB_USERNAME  : username Docker Hub (vereniaes)
+#      -> DOCKER_HUB_TOKEN     : access token Read/Write/Delete Docker Hub
+
+name: Workflow CI - Student Performance
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  train-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run actions/checkout@v3
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.12.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12.7"
+
+      - name: Check Env
+        run: |
+          python --version
+          pip --version
+          docker --version
+          echo "Working directory: $(pwd)"
+          ls -la
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install mlflow==2.19.0 scikit-learn==1.4.2 pandas==2.2.2 numpy==1.26.4
+
+      - name: Run mlflow project
+        run: |
+          mlflow run MLProject/ \
+            --env-manager=local \
+            -P n_estimators=100 \
+            -P max_depth=10 \
+            -P min_samples_split=5 \
+            -P min_samples_leaf=1 \
+            -P max_features=sqrt
+
+      - name: Get latest MLflow run_id
+        id: get_run_id
+        run: |
+          RUN_ID=$(cat MLProject/run_id.txt)
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+          echo "Latest MLflow run_id: $RUN_ID"
+
+      - name: Install Python dependencies
+        run: |
+          pip install mlflow==2.19.0
+
+      - name: Upload to GitHub
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add mlruns/ MLProject/run_id.txt
+          git diff --staged --quiet || git commit -m "ci: upload mlflow artifacts [run_id=${{ steps.get_run_id.outputs.run_id }}] [skip ci]"
+          git push
+
+      - name: Build Docker Model
+        run: |
+          RUN_ID=${{ steps.get_run_id.outputs.run_id }}
+          MLFLOW_TRACKING_URI=mlruns mlflow models build-docker \
+            -m "runs:/$RUN_ID/model" \
+            -n "student-performance-model"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Tag Docker Image
+        run: |
+          docker tag student-performance-model \
+            ${{ secrets.DOCKER_HUB_USERNAME }}/student-performance-model:latest
+          docker tag student-performance-model \
+            ${{ secrets.DOCKER_HUB_USERNAME }}/student-performance-model:${{ github.run_number }}
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/student-performance-model:latest
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/student-performance-model:${{ github.run_number }}

@@ -1,0 +1,20 @@
+# MLProject/conda.yaml
+#
+# -> definisi environment conda untuk MLflow Project
+#      -> dipakai oleh: mlflow run MLProject/
+#      -> python 3.12.7 + dependencies training
+
+name: student-performance-env
+
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+  - python=3.12.7
+  - pip
+  - pip:
+    - mlflow==2.19.0
+    - scikit-learn==1.4.2
+    - pandas==2.2.2
+    - numpy==1.26.4

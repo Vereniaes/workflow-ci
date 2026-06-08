@@ -1,0 +1,29 @@
+# MLProject/MLProject
+#
+# -> konfigurasi MLflow Project
+#      -> mendefinisikan entry point dan parameter yang bisa di-inject
+#      -> dipakai oleh: mlflow run MLProject/ -P n_estimators=200
+
+name: student-performance-workflow-ci
+
+conda_env: conda.yaml
+
+entry_points:
+  main:
+    parameters:
+      n_estimators:      {type: int,   default: 100}
+      max_depth:         {type: int,   default: 10}
+      min_samples_split: {type: int,   default: 5}
+      min_samples_leaf:  {type: int,   default: 1}
+      max_features:      {type: str,   default: "sqrt"}
+      test_size:         {type: float, default: 0.2}
+      random_state:      {type: int,   default: 42}
+    command: >
+      python modelling.py
+      --n-estimators {n_estimators}
+      --max-depth {max_depth}
+      --min-samples-split {min_samples_split}
+      --min-samples-leaf {min_samples_leaf}
+      --max-features {max_features}
+      --test-size {test_size}
+      --random-state {random_state}
