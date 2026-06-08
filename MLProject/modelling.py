@@ -95,7 +95,11 @@ def main(args) -> None:
     )
     logger.info(f"Train: {X_train.shape} | Test: {X_test.shape}")
 
-    mlflow.set_experiment(EXPERIMENT_NAME)
+    # jika dipanggil via `mlflow run`, MLFLOW_RUN_ID sudah di-set di env
+    # -> skip set_experiment() karena experiment sudah dikelola mlflow run
+    # jika dipanggil langsung via python, set experiment manual
+    if not os.environ.get("MLFLOW_RUN_ID"):
+        mlflow.set_experiment(EXPERIMENT_NAME)
 
     with mlflow.start_run() as run:
         logger.info(f"Run ID: {run.info.run_id}")
