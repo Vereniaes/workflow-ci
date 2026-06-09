@@ -1,0 +1,15 @@
+artifact_uri: file:///home/runner/work/workflow-ci/workflow-ci/mlruns/0/a1c8cbb28fdb445d9b932fa9b1074ced/artifacts
+end_time: 1780968467297
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: a1c8cbb28fdb445d9b932fa9b1074ced
+run_name: welcoming-conch-379
+run_uuid: a1c8cbb28fdb445d9b932fa9b1074ced
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1780968460808
+status: 3
+tags: []
+user_id: runner
