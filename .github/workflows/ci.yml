@@ -8,11 +8,14 @@
 #           -> run mlflow project (training)
 #           -> get latest run_id
 #           -> upload artifacts ke GitHub (commit ke repo)
-#           -> build docker image via mlflow models build-docker
+#           -> prepare model artifact untuk Docker build
+#           -> docker build pakai custom Dockerfile (python:3.12-slim)
 #           -> push ke Docker Hub
 # -> secrets yang dibutuhkan:
 #      -> DOCKER_HUB_USERNAME  : username Docker Hub (vereniaes)
 #      -> DOCKER_HUB_TOKEN     : access token Read/Write/Delete Docker Hub
+# -> note: tidak pakai mlflow models build-docker karena ada bug
+#          Python 3.9 + pip bootstrap incompatibility di MLflow 2.x
 
 name: Workflow CI - Student Performance
 
@@ -82,12 +85,22 @@ jobs:
           git diff --staged --quiet || git commit -m "ci: upload mlflow artifacts [run_id=${{ steps.get_run_id.outputs.run_id }}] [skip ci]"
           git push
 
-      - name: Build Docker Model
+      - name: Prepare model artifact for Docker
         run: |
           RUN_ID=${{ steps.get_run_id.outputs.run_id }}
-          MLFLOW_TRACKING_URI=mlruns mlflow models build-docker \
-            -m "runs:/$RUN_ID/model" \
-            -n "student-performance-model"
+          # cari experiment ID (bukan 0 = Default)
+          EXP_DIR=$(ls mlruns/ | grep -v '^0$' | head -1)
+          MODEL_PATH="mlruns/$EXP_DIR/$RUN_ID/artifacts/model"
+          echo "Model path: $MODEL_PATH"
+          ls -la "$MODEL_PATH"
+          # copy ke ./model/ supaya bisa di-COPY di Dockerfile
+          cp -r "$MODEL_PATH" ./model
+          echo "Model artifact siap:"
+          ls -la ./model
+
+      - name: Build Docker Model
+        run: |
+          docker build -t student-performance-model .
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
