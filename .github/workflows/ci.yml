@@ -88,10 +88,15 @@ jobs:
       - name: Prepare model artifact for Docker
         run: |
           RUN_ID=${{ steps.get_run_id.outputs.run_id }}
-          # cari experiment ID (bukan 0 = Default)
-          EXP_DIR=$(ls mlruns/ | grep -v '^0$' | head -1)
-          MODEL_PATH="mlruns/$EXP_DIR/$RUN_ID/artifacts/model"
-          echo "Model path: $MODEL_PATH"
+          echo "Mencari model artifact untuk run_id: $RUN_ID"
+          # pakai find - mlflow run bisa simpan di exp 0 (Default) atau exp lain
+          MODEL_PATH=$(find mlruns -type d -path "*/$RUN_ID/artifacts/model" | head -1)
+          if [ -z "$MODEL_PATH" ]; then
+            echo "ERROR: model artifact tidak ditemukan untuk run_id=$RUN_ID"
+            find mlruns -type d | head -30
+            exit 1
+          fi
+          echo "Model path ditemukan: $MODEL_PATH"
           ls -la "$MODEL_PATH"
           # copy ke ./model/ supaya bisa di-COPY di Dockerfile
           cp -r "$MODEL_PATH" ./model
