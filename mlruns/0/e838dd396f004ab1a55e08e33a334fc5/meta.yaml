@@ -1,0 +1,15 @@
+artifact_uri: file:///home/runner/work/workflow-ci/workflow-ci/mlruns/0/e838dd396f004ab1a55e08e33a334fc5/artifacts
+end_time: 1780968243079
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: e838dd396f004ab1a55e08e33a334fc5
+run_name: abundant-shad-554
+run_uuid: e838dd396f004ab1a55e08e33a334fc5
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1780968237764
+status: 3
+tags: []
+user_id: runner
